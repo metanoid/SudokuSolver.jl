@@ -1,6 +1,17 @@
 # Solve a sudoku puzzle in Julia
 
-# I need the concepts of: Cell, Row, Column, and Block
+puzzle = [
+    8 0 0 0 0 0 0 0 0;
+    0 0 3 6 0 0 0 0 0;
+    0 7 0 0 9 0 2 0 0;
+    0 5 0 0 0 7 0 0 0;
+    0 0 0 0 4 5 7 0 0;
+    0 0 0 1 0 0 0 3 0;
+    0 0 1 0 0 0 0 6 8;
+    0 0 8 5 0 0 0 1 0;
+    0 9 0 0 0 0 4 0 0
+];
+
 
 mutable struct Cell 
     domain::Set
@@ -31,17 +42,6 @@ printcell(cell::Cell) = begin
     end
 end
 
-puzzle = [
-    8 0 0 0 0 0 0 0 0;
-    0 0 3 6 0 0 0 0 0;
-    0 7 0 0 9 0 2 0 0;
-    0 5 0 0 0 7 0 0 0;
-    0 0 0 0 4 5 7 0 0;
-    0 0 0 1 0 0 0 3 0;
-    0 0 1 0 0 0 0 6 8;
-    0 0 8 5 0 0 0 1 0;
-    0 9 0 0 0 0 4 0 0
-];
 
 struct Sudoku
     rows::Dict{Integer, Dict{Tuple{Integer, Integer}, Cell}}
@@ -96,34 +96,11 @@ Base.show(io::IO, s::Sudoku) = begin
     println(horiz)
 end
 
-# sudoku = Dict{String, Dict{Integer, Dict{Tuple{Integer, Integer}, Cell}}}(
-#     "rows" => Dict{Integer, Dict{Tuple{Integer, Integer}, Cell}}(i => Dict{Tuple{Integer, Integer}, Cell}() for i ∈ 1:9),
-#     "columns" => Dict{Integer, Dict{Tuple{Integer, Integer}, Cell}}(i => Dict{Tuple{Integer, Integer}, Cell}() for i ∈ 1:9),
-#     "boxes" => Dict{Integer, Dict{Tuple{Integer, Integer}, Cell}}(i => Dict{Tuple{Integer, Integer}, Cell}() for i ∈ 1:9));
-
-# linearindex = 1;                                               
-# for (i, val) ∈ enumerate(IndexCartesian(), puzzle)
-#     row = i[1];
-#     col = i[2];
-#     if val == 0
-#         domain = Set(1:9);
-#         value = nothing;
-#     else
-#         domain = Set(val);
-#         value = val;
-#     end
-#     a = Cell(domain, row, col, linearindex, value);
-#     push!(sudoku["rows"][row], (row, col) => a);
-#     push!(sudoku["columns"][col], (row, col) => a);
-#     push!(sudoku["boxes"][a.boxid], (row, col) => a);
-#     linearindex += 1;
-# end
 
 update = function(state::Sudoku)
     # for each row, column, and box, remove the fixed values from the domains of all cells
     # for any domain of length 1, set the value to that element
-    # if any domain is empty, return an empty array
-    # otherwise return an array containing a new puzzle
+    # return anew puzzle
     s = deepcopy(state); # make a copy so that we can freely change it
     for view ∈ [s.rows, s.columns, s.boxes];
         # viewkey is "rows", "columns", or "boxes"
@@ -142,7 +119,7 @@ update = function(state::Sudoku)
             end
         end
     end
-    return s; # return the updated state,wrapped in an array
+    return s; # return the updated state
 end;
 
 check = function(state)
@@ -159,13 +136,6 @@ check = function(state)
     end
     return true    
 end;
-
-# see https://github.com/JuliaLang/julia/issues/14672 - fix implemented from v0.7.0 onwards
-# Base.isless(p::Pair, q::Pair) =
-#            ifelse(!isequal(p.second,q.second),
-#                isless(p.second,q.second),
-#                isless(p.first,q.first)
-#            );
 
 function hypothesise(state; strategy = "smallest_domains_first", verboselevel = 0)
     # given a puzzle ste, use the given strategy to identify a cell.
@@ -251,14 +221,12 @@ function hypothesise(state; strategy = "smallest_domains_first", verboselevel = 
     end
     return states
 end;
-#n = check(sudoku);
 
-#using Gallium
 p = Sudoku(puzzle);
 println("Received sudoku:")
 print(p)
 println("Ready to solve!")
-a = hypothesise(p);
+@time a = hypothesise(p);
 for i ∈ a   
     print(i, "\n");
 end
