@@ -12,6 +12,7 @@ puzzle = [
     0 9 0 0 0 0 4 0 0
 ];
 
+Base.IndexStyle(::Array{Int64, 2}) = IndexCartesian() # tell julia v1.0.0 to enumerate 2D arrays with Cartesian indices
 
 mutable struct Cell 
     domain::Set
@@ -32,13 +33,13 @@ end
 
 printcell(cell::Cell) = begin
     if length(cell.domain) == 0
-        print_with_color(:red, "\u058D")
+        printstyled("\u058D", color = :red)
     elseif !cell.fixed
-        print_with_color(:cyan, "\u0482")
+        printstyled("\u0482", color = :cyan)
     elseif cell.known
-        print_with_color(:green, cell.value, bold = true)
+        printstyled(cell.value, bold = true, color = :green)
     else
-        print_with_color(:yellow, cell.value)
+        printstyled(cell.value, color = :yellow)
     end
 end
 
@@ -52,9 +53,10 @@ struct Sudoku
         columns = Dict{Integer, Dict{Tuple{Integer, Integer}, Cell}}(i => Dict{Tuple{Integer, Integer}, Cell}() for i ∈ 1:9)
         boxes = Dict{Integer, Dict{Tuple{Integer, Integer}, Cell}}(i => Dict{Tuple{Integer, Integer}, Cell}() for i ∈ 1:9)
         linearindex = 1;                                               
-        for (i, val) ∈ enumerate(IndexCartesian(), puzzle)
+        for i ∈ eachindex(puzzle)
             row = i[1];
             col = i[2];
+            val = puzzle[row, col];
             if val == 0
                 domain = Set(1:9);
                 value = nothing;
@@ -171,7 +173,7 @@ function hypothesise(state; strategy = "smallest_domains_first", verboselevel = 
         return states
     else
         # the puzzle may still have at least one solution
-        multi_domains = filter((k,v) -> v > 1, domain_lengths); # get the cell indices for cells with free domains
+        multi_domains = filter(p -> p.second > 1, domain_lengths); # get the cell indices for cells with free domains
         if length(multi_domains) == 0
             #should never get here
             #println(multi_domains)
